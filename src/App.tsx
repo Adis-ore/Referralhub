@@ -14,6 +14,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Users from "./pages/Users";
 import UserDetail from "./pages/UserDetail";
+import Referrals from "./pages/Referrals";
 import Withdrawals from "./pages/Withdrawals";
 import AuditLogs from "./pages/AuditLogs";
 import Settings from "./pages/Settings";
@@ -70,6 +71,7 @@ function AppRoutes() {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="users" element={<Users />} />
         <Route path="users/:id" element={<UserDetail />} />
+        <Route path="referrals" element={<Referrals />} />
         <Route path="withdrawals" element={<Withdrawals />} />
         <Route path="points-config" element={<PointsConfiguration />} />
         <Route path="reports" element={<Reports />} />

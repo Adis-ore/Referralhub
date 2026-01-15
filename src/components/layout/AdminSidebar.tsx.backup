@@ -107,11 +107,7 @@ const navigation: NavItem[] = [
   },
 ];
 
-interface AdminSidebarProps {
-  onNavigate?: () => void;
-}
-
-export function AdminSidebar({ onNavigate }: AdminSidebarProps = {}) {
+export function AdminSidebar() {
   const { user, logout, setUserRole } = useAuth();
   const location = useLocation();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
@@ -178,7 +174,6 @@ export function AdminSidebar({ onNavigate }: AdminSidebarProps = {}) {
                       {item.children.filter(canAccess).map((child) => (
                         <li key={child.href}>
                           <NavLink
-                          onClick={onNavigate}
                             to={child.href}
                             className={({ isActive }) =>
                               cn(
@@ -199,7 +194,6 @@ export function AdminSidebar({ onNavigate }: AdminSidebarProps = {}) {
                 </div>
               ) : (
                 <NavLink
-                  onClick={onNavigate}
                   to={item.href}
                   className={({ isActive }) =>
                     cn(
