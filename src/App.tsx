@@ -11,6 +11,7 @@ import { StaffLayout } from "./components/staff/StaffLayout";
 // Admin Pages
 import Index from "./pages/Index";
 import Login from "./pages/Login";
+import SuperAdminLogin from "./pages/SuperAdminLogin";
 import Dashboard from "./pages/Dashboard";
 import Users from "./pages/Users";
 import UserDetail from "./pages/UserDetail";
@@ -19,6 +20,7 @@ import Withdrawals from "./pages/Withdrawals";
 import AuditLogs from "./pages/AuditLogs";
 import Settings from "./pages/Settings";
 import SuperAdminOverride from "./pages/SuperAdminOverride";
+import AdminManagement from "./pages/AdminManagement";
 import Reports from "./pages/Reports";
 import PointsConfiguration from "./pages/PointsConfiguration";
 import NotFound from "./pages/NotFound";
@@ -37,21 +39,35 @@ const queryClient = new QueryClient();
 
 function AdminProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
-  
+
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
-  
+
+  return <>{children}</>;
+}
+
+function SuperAdminProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, user } = useAuth();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/superadmin/login" replace />;
+  }
+
+  if (user?.role !== 'super_admin') {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return <>{children}</>;
 }
 
 function StaffProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useStaffAuth();
-  
+
   if (!isAuthenticated) {
     return <Navigate to="/staff/login" replace />;
   }
-  
+
   return <>{children}</>;
 }
 
@@ -60,9 +76,12 @@ function AppRoutes() {
     <Routes>
       {/* Landing - redirects based on auth */}
       <Route path="/" element={<Index />} />
-      
-      {/* Admin Routes */}
+
+      {/* Auth Pages */}
       <Route path="/login" element={<Login />} />
+      <Route path="/superadmin/login" element={<SuperAdminLogin />} />
+
+      {/* Admin Routes */}
       <Route path="/" element={
         <AdminProtectedRoute>
           <AdminLayout />
@@ -77,7 +96,17 @@ function AppRoutes() {
         <Route path="reports" element={<Reports />} />
         <Route path="audit" element={<AuditLogs />} />
         <Route path="settings" element={<Settings />} />
-        <Route path="override" element={<SuperAdminOverride />} />
+        {/* Super Admin Only Routes */}
+        <Route path="admin-management" element={
+          <SuperAdminProtectedRoute>
+            <AdminManagement />
+          </SuperAdminProtectedRoute>
+        } />
+        <Route path="override" element={
+          <SuperAdminProtectedRoute>
+            <SuperAdminOverride />
+          </SuperAdminProtectedRoute>
+        } />
       </Route>
 
       {/* Staff Routes */}
@@ -95,7 +124,7 @@ function AppRoutes() {
         <Route path="notifications" element={<StaffNotifications />} />
         <Route path="profile" element={<StaffProfile />} />
       </Route>
-      
+
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

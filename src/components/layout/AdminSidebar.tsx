@@ -11,6 +11,7 @@ import {
   FaChartBar as BarChart3,
   FaFileAlt as FileText,
   FaShieldAlt as Shield,
+  FaUserShield,
   FaChevronDown as ChevronDown,
   FaChevronRight as ChevronRight,
   FaSignOutAlt as LogOut,
@@ -92,6 +93,12 @@ const navigation: NavItem[] = [
     title: 'Audit Logs',
     href: '/audit',
     icon: FileText,
+  },
+  {
+    title: 'Admin Management',
+    href: '/admin-management',
+    icon: FaUserShield,
+    roles: ['super_admin'],
   },
   {
     title: 'Configuration',

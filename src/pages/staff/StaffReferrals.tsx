@@ -142,7 +142,7 @@ export default function StaffReferrals() {
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <FaClock className="w-3.5 h-3.5" />
-                      <span>{referral.hoursCompleted}/{referral.hoursRequired} hrs</span>
+                      <span>{referral.hoursCompleted >= 120 ? '120+' : referral.hoursCompleted}/{referral.hoursRequired} hrs</span>
                     </div>
                     {referral.pointsEarned > 0 && (
                       <div className="flex items-center gap-1 text-success">
@@ -203,8 +203,8 @@ export default function StaffReferrals() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-card rounded-xl p-4 border border-border text-center">
                   <FaClock className="w-6 h-6 text-staff-primary mx-auto mb-2" />
-                  <p className="text-xl font-bold">{selectedReferral.hoursCompleted}</p>
-                  <p className="text-xs text-muted-foreground">Hours Worked</p>
+                  <p className="text-xl font-bold">{selectedReferral.hoursCompleted >= 120 ? '120+' : selectedReferral.hoursCompleted}</p>
+                  <p className="text-xs text-muted-foreground">{selectedReferral.hoursCompleted >= 120 ? 'Capped for privacy' : 'Hours Worked'}</p>
                 </div>
                 <div className="bg-card rounded-xl p-4 border border-border text-center">
                   <GiTwoCoins className="w-6 h-6 text-success mx-auto mb-2" />

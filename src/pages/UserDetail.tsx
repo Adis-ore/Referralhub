@@ -1,12 +1,33 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AdminHeader } from '@/components/layout/AdminHeader';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { AuditInfo } from '@/components/ui/audit-info';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FaArrowLeft as ArrowLeft, FaEnvelope as Mail, FaMapMarkerAlt as MapPin, FaBriefcase as Briefcase, FaCalendar as Calendar, FaGift as Gift, FaCoins as Coins, FaClock as Clock, FaEdit as Edit, FaBan as Ban } from 'react-icons/fa';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import {
+  FaArrowLeft as ArrowLeft,
+  FaEnvelope as Mail,
+  FaMapMarkerAlt as MapPin,
+  FaBriefcase as Briefcase,
+  FaCalendar as Calendar,
+  FaGift as Gift,
+  FaCoins as Coins,
+  FaClock as Clock,
+  FaEdit as Edit,
+  FaBan as Ban,
+  FaDownload,
+  FaUniversity,
+  FaPlus,
+  FaMinus,
+} from 'react-icons/fa';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 const mockUser = {
   id: '1',
@@ -18,6 +39,7 @@ const mockUser = {
   department: 'Aged Care',
   employeeId: 'EMP-2847',
   joinedDate: '2024-01-15',
+  lastActiveDate: '2026-02-05',
   status: 'active' as const,
   referrer: { name: 'Michael Chen', id: '2' },
   referralsMade: 8,
@@ -27,6 +49,11 @@ const mockUser = {
   withdrawnPoints: 1000,
   lastUpdated: '2024-06-15 14:30',
   updatedBy: 'System Sync',
+  bankAccount: {
+    bankName: 'GTBank',
+    accountNumber: '1234567890',
+    accountName: 'Sarah Johnson',
+  },
 };
 
 const referrals = [
@@ -50,206 +77,165 @@ const withdrawalHistory = [
 export default function UserDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user: adminUser } = useAuth();
+  const [showAdjustModal, setShowAdjustModal] = useState(false);
+  const [adjustType, setAdjustType] = useState<'add' | 'deduct'>('add');
+  const [adjustAmount, setAdjustAmount] = useState('');
+  const [adjustReason, setAdjustReason] = useState('');
+  const [currentPoints, setCurrentPoints] = useState(mockUser.availablePoints);
+
+  const canAdjustPoints = adminUser?.role === 'super_admin' || adminUser?.role === 'finance_admin';
+
+  const handleAdjustPoints = () => {
+    const amount = parseInt(adjustAmount);
+    if (!amount || amount <= 0) { toast.error('Enter a valid amount'); return; }
+    if (!adjustReason || adjustReason.length < 5) { toast.error('Provide a reason (min 5 characters)'); return; }
+    if (adjustType === 'deduct' && amount > currentPoints) { toast.error('Cannot deduct more than available points'); return; }
+    const newPoints = adjustType === 'add' ? currentPoints + amount : currentPoints - amount;
+    setCurrentPoints(newPoints);
+    setShowAdjustModal(false);
+    setAdjustAmount('');
+    setAdjustReason('');
+    toast.success(`Points ${adjustType === 'add' ? 'added' : 'deducted'}. New balance: ${newPoints.toLocaleString()}`);
+  };
+
+  const handleExport = (section: string) => { toast.success(`${section} exported as PDF`); };
 
   return (
     <div className="min-h-screen">
       <AdminHeader title="User Details" subtitle={`User ID: ${mockUser.employeeId}`} />
-
-      <div className="p-6 space-y-6">
-        {/* Back Button */}
+      <div className="p-4 md:p-6 space-y-4 md:space-y-6">
         <Button variant="ghost" onClick={() => navigate('/users')} className="gap-2">
-          <ArrowLeft className="w-4 h-4" />
-          Back to Users
+          <ArrowLeft className="w-4 h-4" /> Back to Users
         </Button>
 
         {/* Profile Header */}
         <div className="audit-card">
           <div className="audit-card-body">
-            <div className="flex items-start justify-between">
-              <div className="flex items-start gap-6">
-                <Avatar className="h-20 w-20">
-                  <AvatarFallback className="bg-primary/10 text-primary text-2xl">
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+              <div className="flex flex-col sm:flex-row items-start gap-4 md:gap-6">
+                <Avatar className="h-16 w-16 md:h-20 md:w-20">
+                  <AvatarFallback className="bg-primary/10 text-primary text-xl md:text-2xl">
                     {mockUser.name.split(' ').map(n => n[0]).join('')}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <div className="flex items-center gap-3 mb-2">
-                    <h2 className="text-2xl font-semibold">{mockUser.name}</h2>
+                  <div className="flex items-center gap-3 mb-2 flex-wrap">
+                    <h2 className="text-xl md:text-2xl font-semibold">{mockUser.name}</h2>
                     <StatusBadge status={mockUser.status} />
                   </div>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Mail className="w-4 h-4" />
-                      {mockUser.email}
-                    </div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <MapPin className="w-4 h-4" />
-                      {mockUser.location}
-                    </div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Briefcase className="w-4 h-4" />
-                      {mockUser.classification}
-                    </div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Calendar className="w-4 h-4" />
-                      Joined {mockUser.joinedDate}
-                    </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-4 text-sm">
+                    <div className="flex items-center gap-2 text-muted-foreground"><Mail className="w-4 h-4 shrink-0" /><span className="truncate">{mockUser.email}</span></div>
+                    <div className="flex items-center gap-2 text-muted-foreground"><MapPin className="w-4 h-4 shrink-0" />{mockUser.location}</div>
+                    <div className="flex items-center gap-2 text-muted-foreground"><Briefcase className="w-4 h-4 shrink-0" />{mockUser.classification}</div>
+                    <div className="flex items-center gap-2 text-muted-foreground"><Calendar className="w-4 h-4 shrink-0" />Joined {mockUser.joinedDate}</div>
                   </div>
                   {mockUser.referrer && (
                     <div className="mt-3 flex items-center gap-2">
                       <Gift className="w-4 h-4 text-accent" />
-                      <span className="text-sm">
-                        Referred by{' '}
-                        <button className="text-accent hover:underline">
-                          {mockUser.referrer.name}
-                        </button>
-                      </span>
+                      <span className="text-sm">Referred by <button className="text-accent hover:underline">{mockUser.referrer.name}</button></span>
                     </div>
                   )}
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="outline">
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit
-                </Button>
-                <Button variant="outline" className="text-destructive hover:text-destructive">
-                  <Ban className="w-4 h-4 mr-2" />
-                  Deactivate
-                </Button>
+                <Button variant="outline" size="sm"><Edit className="w-4 h-4 mr-2" />Edit</Button>
+                <Button variant="outline" size="sm" className="text-destructive hover:text-destructive"><Ban className="w-4 h-4 mr-2" />Deactivate</Button>
               </div>
             </div>
           </div>
           <div className="audit-card-footer">
-            <AuditInfo
-              updatedAt={mockUser.lastUpdated}
-              updatedBy={mockUser.updatedBy}
-              onViewHistory={() => {}}
-            />
+            <AuditInfo updatedAt={mockUser.lastUpdated} updatedBy={mockUser.updatedBy} onViewHistory={() => {}} />
+          </div>
+        </div>
+
+        {/* Bank Account */}
+        <div className="audit-card">
+          <div className="audit-card-header"><div className="flex items-center gap-2"><FaUniversity className="w-4 h-4 text-muted-foreground" /><h3 className="font-semibold text-sm">Bank Account Details</h3></div></div>
+          <div className="audit-card-body">
+            {mockUser.bankAccount ? (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                <div><p className="text-muted-foreground mb-1">Bank Name</p><p className="font-medium">{mockUser.bankAccount.bankName}</p></div>
+                <div><p className="text-muted-foreground mb-1">Account Number</p><p className="font-mono font-medium">{mockUser.bankAccount.accountNumber}</p></div>
+                <div><p className="text-muted-foreground mb-1">Account Name</p><p className="font-medium">{mockUser.bankAccount.accountName}</p></div>
+              </div>
+            ) : (<p className="text-sm text-muted-foreground">No bank account details on file.</p>)}
           </div>
         </div>
 
         {/* Points Summary */}
-        <div className="grid grid-cols-4 gap-4">
-          <div className="kpi-card before:bg-accent">
-            <p className="text-sm text-muted-foreground">Total Points</p>
-            <p className="text-2xl font-semibold mt-1">{mockUser.totalPoints.toLocaleString()}</p>
-          </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+          <div className="kpi-card before:bg-accent"><p className="text-xs md:text-sm text-muted-foreground">Total Points</p><p className="text-lg md:text-2xl font-semibold mt-1">{mockUser.totalPoints.toLocaleString()}</p></div>
           <div className="kpi-card before:bg-success">
-            <p className="text-sm text-muted-foreground">Available</p>
-            <p className="text-2xl font-semibold mt-1">{mockUser.availablePoints.toLocaleString()}</p>
+            <div className="flex items-center justify-between"><p className="text-xs md:text-sm text-muted-foreground">Available</p>{canAdjustPoints && <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setShowAdjustModal(true)}>Adjust</Button>}</div>
+            <p className="text-lg md:text-2xl font-semibold mt-1">{currentPoints.toLocaleString()}</p>
           </div>
-          <div className="kpi-card before:bg-warning">
-            <p className="text-sm text-muted-foreground">Pending</p>
-            <p className="text-2xl font-semibold mt-1">{mockUser.pendingPoints.toLocaleString()}</p>
-          </div>
-          <div className="kpi-card before:bg-info">
-            <p className="text-sm text-muted-foreground">Withdrawn</p>
-            <p className="text-2xl font-semibold mt-1">{mockUser.withdrawnPoints.toLocaleString()}</p>
-          </div>
+          <div className="kpi-card before:bg-warning"><p className="text-xs md:text-sm text-muted-foreground">Pending</p><p className="text-lg md:text-2xl font-semibold mt-1">{mockUser.pendingPoints.toLocaleString()}</p></div>
+          <div className="kpi-card before:bg-info"><p className="text-xs md:text-sm text-muted-foreground">Withdrawn</p><p className="text-lg md:text-2xl font-semibold mt-1">{mockUser.withdrawnPoints.toLocaleString()}</p></div>
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="referrals" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="referrals">Referrals ({referrals.length})</TabsTrigger>
-            <TabsTrigger value="points">Points History</TabsTrigger>
-            <TabsTrigger value="withdrawals">Withdrawals</TabsTrigger>
-          </TabsList>
-
+        <Tabs defaultValue="referrals" className="space-y-4 md:space-y-6">
+          <TabsList className="w-full sm:w-auto"><TabsTrigger value="referrals">Referrals ({referrals.length})</TabsTrigger><TabsTrigger value="points">Points History</TabsTrigger><TabsTrigger value="withdrawals">Withdrawals</TabsTrigger></TabsList>
           <TabsContent value="referrals">
             <div className="audit-card">
-              <div className="audit-card-header">
-                <h3 className="font-semibold">Referrals Made</h3>
-              </div>
-              <div className="divide-y divide-border">
-                {referrals.map((ref) => (
-                  <div key={ref.id} className="px-6 py-4 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <Avatar className="h-10 w-10">
-                        <AvatarFallback className="bg-accent/10 text-accent">
-                          {ref.name.split(' ').map(n => n[0]).join('')}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium">{ref.name}</p>
-                        <p className="text-sm text-muted-foreground">Referred on {ref.date}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <StatusBadge status={ref.status === 'completed' ? 'approved' : 'pending'} label={ref.status} />
-                      {ref.points > 0 && (
-                        <div className="flex items-center gap-1.5">
-                          <Coins className="w-4 h-4 text-warning" />
-                          <span className="font-medium">+{ref.points}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <div className="audit-card-header flex items-center justify-between"><h3 className="font-semibold">Referrals Made</h3><Button variant="outline" size="sm" onClick={() => handleExport('Referrals')}><FaDownload className="w-3.5 h-3.5 mr-1.5" />PDF</Button></div>
+              <div className="divide-y divide-border">{referrals.map((ref) => (
+                <div key={ref.id} className="px-4 md:px-6 py-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3 md:gap-4"><Avatar className="h-8 w-8 md:h-10 md:w-10"><AvatarFallback className="bg-accent/10 text-accent text-xs">{ref.name.split(' ').map(n => n[0]).join('')}</AvatarFallback></Avatar><div><p className="font-medium text-sm">{ref.name}</p><p className="text-xs text-muted-foreground">Referred on {ref.date}</p></div></div>
+                  <div className="flex items-center gap-2 md:gap-4"><StatusBadge status={ref.status === 'completed' ? 'approved' : 'pending'} label={ref.status} />{ref.points > 0 && <div className="flex items-center gap-1.5"><Coins className="w-4 h-4 text-warning" /><span className="font-medium text-sm">+{ref.points}</span></div>}</div>
+                </div>
+              ))}</div>
             </div>
           </TabsContent>
-
           <TabsContent value="points">
             <div className="audit-card">
-              <div className="audit-card-header">
-                <h3 className="font-semibold">Points History</h3>
-              </div>
-              <div className="divide-y divide-border">
-                {pointsHistory.map((item) => (
-                  <div key={item.id} className="px-6 py-4 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className={`p-2 rounded-lg ${
-                        item.type === 'earned' ? 'bg-success/10 text-success' :
-                        item.type === 'withdrawn' ? 'bg-info/10 text-info' :
-                        'bg-warning/10 text-warning'
-                      }`}>
-                        {item.type === 'earned' ? <Coins className="w-4 h-4" /> :
-                         item.type === 'withdrawn' ? <Clock className="w-4 h-4" /> :
-                         <Clock className="w-4 h-4" />}
-                      </div>
-                      <div>
-                        <p className="font-medium">{item.description}</p>
-                        <p className="text-sm text-muted-foreground">{item.date}</p>
-                      </div>
-                    </div>
-                    <span className={`font-semibold ${
-                      item.amount > 0 ? 'text-success' : item.amount < 0 ? 'text-foreground' : 'text-warning'
-                    }`}>
-                      {item.amount > 0 ? '+' : ''}{item.amount.toLocaleString()}
-                    </span>
-                  </div>
-                ))}
-              </div>
+              <div className="audit-card-header flex items-center justify-between"><h3 className="font-semibold">Points History</h3><Button variant="outline" size="sm" onClick={() => handleExport('Points History')}><FaDownload className="w-3.5 h-3.5 mr-1.5" />PDF</Button></div>
+              <div className="divide-y divide-border">{pointsHistory.map((item) => (
+                <div key={item.id} className="px-4 md:px-6 py-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3 md:gap-4"><div className={`p-2 rounded-lg ${item.type === 'earned' ? 'bg-success/10 text-success' : item.type === 'withdrawn' ? 'bg-info/10 text-info' : 'bg-warning/10 text-warning'}`}><Coins className="w-4 h-4" /></div><div><p className="font-medium text-sm">{item.description}</p><p className="text-xs text-muted-foreground">{item.date}</p></div></div>
+                  <span className={`font-semibold text-sm ${item.amount > 0 ? 'text-success' : 'text-foreground'}`}>{item.amount > 0 ? '+' : ''}{item.amount.toLocaleString()}</span>
+                </div>
+              ))}</div>
             </div>
           </TabsContent>
-
           <TabsContent value="withdrawals">
             <div className="audit-card">
-              <div className="audit-card-header">
-                <h3 className="font-semibold">Withdrawal History</h3>
-              </div>
-              <div className="divide-y divide-border">
-                {withdrawalHistory.map((item) => (
-                  <div key={item.id} className="px-6 py-4 flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Withdrawal #{item.id}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Requested: {item.requestedDate} • Paid: {item.paidDate}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <StatusBadge status={item.status as any} />
-                      <span className="font-semibold">${item.amount.toLocaleString()}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <div className="audit-card-header flex items-center justify-between"><h3 className="font-semibold">Withdrawal History</h3><Button variant="outline" size="sm" onClick={() => handleExport('Withdrawal History')}><FaDownload className="w-3.5 h-3.5 mr-1.5" />PDF</Button></div>
+              <div className="divide-y divide-border">{withdrawalHistory.map((item) => (
+                <div key={item.id} className="px-4 md:px-6 py-4 flex items-center justify-between">
+                  <div><p className="font-medium text-sm">Withdrawal #{item.id}</p><p className="text-xs text-muted-foreground">Requested: {item.requestedDate} | Paid: {item.paidDate}</p></div>
+                  <div className="flex items-center gap-2 md:gap-4"><StatusBadge status={item.status as any} /><span className="font-semibold text-sm">${item.amount.toLocaleString()}</span></div>
+                </div>
+              ))}</div>
             </div>
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Points Adjustment Modal */}
+      <Dialog open={showAdjustModal} onOpenChange={setShowAdjustModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle>Adjust Points</DialogTitle><DialogDescription>Adjust {mockUser.name}'s available points. Current balance: {currentPoints.toLocaleString()} pts</DialogDescription></DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="flex gap-2">
+              <Button variant={adjustType === 'add' ? 'default' : 'outline'} onClick={() => setAdjustType('add')} className="flex-1" size="sm"><FaPlus className="w-3.5 h-3.5 mr-1.5" />Add Points</Button>
+              <Button variant={adjustType === 'deduct' ? 'destructive' : 'outline'} onClick={() => setAdjustType('deduct')} className="flex-1" size="sm"><FaMinus className="w-3.5 h-3.5 mr-1.5" />Deduct Points</Button>
+            </div>
+            <div className="space-y-2"><Label>Amount</Label><Input type="number" value={adjustAmount} onChange={(e) => setAdjustAmount(e.target.value)} placeholder="Enter points amount" min={1} /></div>
+            {adjustType === 'deduct' && <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => setAdjustAmount(String(currentPoints))}>Set to Zero (deduct all {currentPoints.toLocaleString()} points)</Button>}
+            <div className="space-y-2"><Label>Reason (required)</Label><Textarea value={adjustReason} onChange={(e) => setAdjustReason(e.target.value)} placeholder="e.g., Inactive for 3+ months, bonus correction, shift penalty" rows={3} /></div>
+            {adjustAmount && (
+              <div className="p-3 rounded-lg bg-muted/50 text-sm">
+                <div className="flex justify-between"><span className="text-muted-foreground">Current Balance</span><span>{currentPoints.toLocaleString()} pts</span></div>
+                <div className="flex justify-between mt-1"><span className="text-muted-foreground">{adjustType === 'add' ? 'Adding' : 'Deducting'}</span><span className={adjustType === 'add' ? 'text-success' : 'text-destructive'}>{adjustType === 'add' ? '+' : '-'}{parseInt(adjustAmount || '0').toLocaleString()} pts</span></div>
+                <div className="flex justify-between mt-1 pt-1 border-t font-medium"><span>New Balance</span><span>{adjustType === 'add' ? (currentPoints + parseInt(adjustAmount || '0')).toLocaleString() : Math.max(0, currentPoints - parseInt(adjustAmount || '0')).toLocaleString()} pts</span></div>
+              </div>
+            )}
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setShowAdjustModal(false)}>Cancel</Button><Button onClick={handleAdjustPoints} variant={adjustType === 'deduct' ? 'destructive' : 'default'}>{adjustType === 'add' ? 'Add Points' : 'Deduct Points'}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

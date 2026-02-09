@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { FaBolt, FaEye, FaEyeSlash, FaCircleNotch } from 'react-icons/fa';
+import { FaBolt, FaEye, FaEyeSlash, FaCircleNotch, FaShieldAlt } from 'react-icons/fa';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -23,8 +23,8 @@ export default function Login() {
     try {
       await login(email, password);
       navigate('/dashboard');
-    } catch (err) {
-      setError('Invalid credentials. Please try again.');
+    } catch (err: any) {
+      setError(err.message || 'Invalid credentials. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -145,19 +145,30 @@ export default function Login() {
             </Button>
           </form>
 
-          <div className="mt-8 p-4 rounded-lg bg-muted/50 border border-border">
-            <p className="text-sm text-muted-foreground text-center">
-              <strong>Demo:</strong> Enter any email and password to access the dashboard.
-              Use the profile menu to switch between different admin roles.
-            </p>
+          <div className="mt-6 p-4 rounded-lg bg-muted/50 border border-border">
+            <p className="text-xs font-medium text-muted-foreground mb-2">Demo Credentials:</p>
+            <div className="space-y-1 font-mono text-xs text-muted-foreground">
+              <p>Admin: <span className="text-foreground">admin@company.com</span> / <span className="text-foreground">admin123</span></p>
+              <p>Manager: <span className="text-foreground">manager@company.com</span> / <span className="text-foreground">manager123</span></p>
+            </div>
           </div>
 
-          <p className="text-center text-sm text-muted-foreground mt-8">
-            Need help? Contact{' '}
-            <a href="#" className="text-accent hover:underline">
-              IT Support
-            </a>
-          </p>
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3 text-sm">
+            <Link
+              to="/superadmin/login"
+              className="flex items-center gap-1.5 text-red-500 hover:text-red-600 transition-colors font-medium"
+            >
+              <FaShieldAlt className="w-3.5 h-3.5" />
+              Super Admin Login
+            </Link>
+            <span className="hidden sm:inline text-muted-foreground">|</span>
+            <Link
+              to="/staff/login"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Staff Login
+            </Link>
+          </div>
         </div>
       </div>
     </div>

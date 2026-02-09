@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { adminLogin as apiAdminLogin } from '@/services/mockApi';
 
 export type UserRole = 'super_admin' | 'finance_admin' | 'operations_admin' | 'manager' | 'read_only';
 
@@ -7,6 +8,7 @@ export interface User {
   name: string;
   email: string;
   role: UserRole;
+  permissions?: string[];
   avatar?: string;
 }
 
@@ -16,17 +18,19 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   setUserRole: (role: UserRole) => void;
+  token: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Demo users for different roles
+// Demo users for role switching
 const demoUsers: Record<UserRole, User> = {
   super_admin: {
-    id: '1',
-    name: 'Sarah Chen',
-    email: 'sarah.chen@company.com',
+    id: 'admin-1',
+    name: 'Admin Super',
+    email: 'admin@company.com',
     role: 'super_admin',
+    permissions: ['all'],
   },
   finance_admin: {
     id: '2',
@@ -41,15 +45,15 @@ const demoUsers: Record<UserRole, User> = {
     role: 'operations_admin',
   },
   manager: {
-    id: '4',
-    name: 'James Park',
-    email: 'james.park@company.com',
+    id: 'admin-2',
+    name: 'Manager User',
+    email: 'manager@company.com',
     role: 'manager',
   },
   read_only: {
-    id: '5',
-    name: 'Alex Johnson',
-    email: 'alex.johnson@company.com',
+    id: 'admin-3',
+    name: 'Analyst User',
+    email: 'analyst@company.com',
     role: 'read_only',
   },
 };
@@ -71,20 +75,46 @@ export const roleStyles: Record<UserRole, string> = {
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    const stored = localStorage.getItem('admin_user');
+    return stored ? JSON.parse(stored) : null;
+  });
+  const [token, setToken] = useState<string | null>(() => {
+    return localStorage.getItem('admin_token');
+  });
 
   const login = async (email: string, password: string) => {
-    // Simulate login - in production this would validate against backend
-    await new Promise(resolve => setTimeout(resolve, 800));
-    setUser(demoUsers.super_admin);
+    const result = await apiAdminLogin(email, password);
+
+    if (!result.success) {
+      throw new Error(result.message);
+    }
+
+    const loggedInUser: User = {
+      id: result.data.user.id,
+      name: result.data.user.name,
+      email: result.data.user.email,
+      role: result.data.user.role as UserRole,
+      permissions: result.data.user.permissions,
+    };
+
+    setUser(loggedInUser);
+    setToken(result.data.token);
+    localStorage.setItem('admin_user', JSON.stringify(loggedInUser));
+    localStorage.setItem('admin_token', result.data.token);
   };
 
   const logout = () => {
     setUser(null);
+    setToken(null);
+    localStorage.removeItem('admin_user');
+    localStorage.removeItem('admin_token');
   };
 
   const setUserRole = (role: UserRole) => {
-    setUser(demoUsers[role]);
+    const newUser = demoUsers[role];
+    setUser(newUser);
+    localStorage.setItem('admin_user', JSON.stringify(newUser));
   };
 
   return (
@@ -94,6 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       logout,
       setUserRole,
+      token,
     }}>
       {children}
     </AuthContext.Provider>

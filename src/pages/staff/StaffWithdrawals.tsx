@@ -85,17 +85,18 @@ export default function StaffWithdrawals() {
 
   const availablePoints = 2500;
   const minWithdrawalPoints = 100;
-  
+  const maxWithdrawalPoints = 2500;
+
   // Conversion calculations using current rate
   const { pointsPerUnit, currencySymbol, currencyCode } = currentConversionRate;
   const pointsToAmount = (points: number) => points / pointsPerUnit;
   const amountToPoints = (amount: number) => amount * pointsPerUnit;
 
   const enteredPoints = parseInt(withdrawPoints) || 0;
-  const estimatedAmount = pointsToAmount(enteredPoints);
-  const maxWithdrawableAmount = pointsToAmount(availablePoints);
+  const estimatedAmount = pointsToAmount(Math.min(enteredPoints, maxWithdrawalPoints));
+  const maxWithdrawableAmount = pointsToAmount(Math.min(availablePoints, maxWithdrawalPoints));
 
-  const canWithdraw = enteredPoints >= minWithdrawalPoints && enteredPoints <= availablePoints;
+  const canWithdraw = enteredPoints >= minWithdrawalPoints && enteredPoints <= availablePoints && enteredPoints <= maxWithdrawalPoints;
 
   const handleWithdraw = () => {
     setShowConfirm(false);
@@ -244,7 +245,14 @@ export default function StaffWithdrawals() {
               </div>
             )}
 
-            {enteredPoints > availablePoints && (
+            {enteredPoints > maxWithdrawalPoints && (
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/5 border border-destructive/20 text-destructive">
+                <FaExclamationCircle className="w-4 h-4" />
+                <span className="text-sm">Maximum withdrawal is {maxWithdrawalPoints.toLocaleString()} points per request</span>
+              </div>
+            )}
+
+            {enteredPoints > availablePoints && enteredPoints <= maxWithdrawalPoints && (
               <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/5 border border-destructive/20 text-destructive">
                 <FaExclamationCircle className="w-4 h-4" />
                 <span className="text-sm">Insufficient points balance</span>
@@ -281,6 +289,7 @@ export default function StaffWithdrawals() {
             <ul className="text-sm text-muted-foreground space-y-1">
               <li>• Current rate: {pointsPerUnit} points = {currencySymbol}1.00 {currencyCode}</li>
               <li>• Minimum withdrawal: {minWithdrawalPoints} points</li>
+              <li>• Maximum withdrawal: {maxWithdrawalPoints.toLocaleString()} points per request</li>
               <li>• Processing time: 3-5 business days</li>
               <li>• Paid to your registered bank account</li>
             </ul>

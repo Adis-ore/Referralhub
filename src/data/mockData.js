@@ -23,6 +23,21 @@ const generateReferralCode = (index) => {
   return code + index.toString().padStart(2, '0');
 };
 
+// Classifications/professions
+const classifications = ['Registered Nurse', 'Care Worker', 'Support Worker', 'Admin Staff', 'Driver'];
+
+// Bank names for mock bank accounts
+const bankNames = ['GTBank', 'Access Bank', 'Zenith Bank', 'First Bank', 'UBA', 'Sterling Bank', 'Fidelity Bank'];
+
+// Profession-based conversion rates
+export const professionRates = [
+  { id: 1, classification: 'Registered Nurse', pointsPerUnit: 2, cashPerPoint: 2.5, currencySymbol: '$', currencyCode: 'AUD', isActive: true },
+  { id: 2, classification: 'Care Worker', pointsPerUnit: 2, cashPerPoint: 0.5, currencySymbol: '$', currencyCode: 'AUD', isActive: true },
+  { id: 3, classification: 'Support Worker', pointsPerUnit: 2, cashPerPoint: 0.5, currencySymbol: '$', currencyCode: 'AUD', isActive: true },
+  { id: 4, classification: 'Admin Staff', pointsPerUnit: 2, cashPerPoint: 0.5, currencySymbol: '$', currencyCode: 'AUD', isActive: true },
+  { id: 5, classification: 'Driver', pointsPerUnit: 2, cashPerPoint: 0.5, currencySymbol: '$', currencyCode: 'AUD', isActive: true },
+];
+
 // 50 Staff Users
 export const staffUsers = [
   // Sales Department (20 users)
@@ -85,6 +100,24 @@ export const staffUsers = [
   { id: 49, firstName: 'Ikechukwu', lastName: 'Anyanwu', email: 'ikechukwu.anyanwu@company.com', phone: generatePhone(), password: 'password123', referralCode: 'REFW9Z6I49', department: 'Operations', position: 'Senior', location: 'Port Harcourt', joinDate: '2023-11-18', isActive: false, pointsBalance: 1500, totalReferrals: 2, successfulReferrals: 1, avatar: 'https://i.pravatar.cc/150?img=49' },
   { id: 50, firstName: 'Amina', lastName: 'Bala', email: 'amina.bala@company.com', phone: generatePhone(), password: 'password123', referralCode: 'REFX0A7J50', department: 'Operations', position: 'Junior', location: 'Abuja', joinDate: '2024-10-28', isActive: true, pointsBalance: 4100, totalReferrals: 5, successfulReferrals: 4, avatar: 'https://i.pravatar.cc/150?img=50' }
 ];
+
+// Enrich staff users with classification, bank account, lastActiveDate
+staffUsers.forEach((user, index) => {
+  user.classification = classifications[index % classifications.length];
+  user.lastActiveDate = user.isActive
+    ? getRandomDate(new Date('2026-01-01'), new Date('2026-02-09')).toISOString().split('T')[0]
+    : getRandomDate(new Date('2025-06-01'), new Date('2025-10-01')).toISOString().split('T')[0];
+  // ~70% of users have bank accounts set up
+  if (Math.random() > 0.3) {
+    user.bankAccount = {
+      bankName: bankNames[Math.floor(Math.random() * bankNames.length)],
+      accountNumber: String(Math.floor(Math.random() * 9000000000) + 1000000000),
+      accountName: `${user.firstName} ${user.lastName}`,
+    };
+  } else {
+    user.bankAccount = null;
+  }
+});
 
 // 3 Admin Users
 export const adminUsers = [
@@ -379,18 +412,26 @@ export const conversionRates = [
 
 // System Settings
 export const systemSettings = {
-  timezone: 'Africa/Lagos',
-  currency: 'NGN',
-  pointsPerNaira: 10,
-  minimumWithdrawal: 5000,
-  maximumWithdrawal: 100000,
+  timezone: 'Australia/Sydney',
+  currency: 'AUD',
+  currencySymbol: '$',
+  pointsPerUnit: 2,
+  minimumWithdrawal: 100,
+  maximumWithdrawal: 2500,
+  maxWithdrawalPoints: 2500,
+  referralHoursCap: 120,
+  inactivityPeriods: {
+    flagInactive: 3,
+    deleteAccount: 6,
+  },
   features: {
     referralSystem: true,
     withdrawalSystem: true,
     pointsSystem: true,
-    notifications: true
+    notifications: true,
+    professionBasedRates: true,
   },
-  retentionDays: 365
+  retentionYears: 5
 };
 
 // Reports

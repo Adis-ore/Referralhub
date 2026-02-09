@@ -10,6 +10,12 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
   FaDownload as Download,
   FaCheck as Check,
   FaTimes as X,
@@ -22,7 +28,11 @@ import {
   FaChartLine as TrendingUp,
   FaChartLine as TrendingDown,
   FaExclamationTriangle as AlertTriangle,
-  FaInfoCircle as Info
+  FaInfoCircle as Info,
+  FaUniversity as University,
+  FaCheckSquare,
+  FaRegSquare,
+  FaMinusSquare,
 } from 'react-icons/fa';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -42,6 +52,9 @@ interface Withdrawal {
   processedDate?: string;
   processedBy?: string;
   note?: string;
+  bankName?: string;
+  accountNumber?: string;
+  accountName?: string;
 }
 
 // Current active rate for comparison
@@ -53,91 +66,109 @@ const currentActiveRate = {
 
 const mockWithdrawals: Withdrawal[] = [
   { 
-    id: 'WR-2001', 
-    userId: '1', 
-    userName: 'Sarah Johnson', 
-    userEmail: 'sarah.j@email.com', 
-    pointsWithdrawn: 500, 
-    conversionRate: 2, 
+    id: 'WR-2001',
+    userId: '1',
+    userName: 'Sarah Johnson',
+    userEmail: 'sarah.j@email.com',
+    pointsWithdrawn: 500,
+    conversionRate: 2,
     currencySymbol: '$',
     currencyCode: 'AUD',
-    finalAmount: 250, 
-    status: 'pending', 
-    requestedDate: '2024-06-15' 
+    finalAmount: 250,
+    status: 'pending',
+    requestedDate: '2024-06-15',
+    bankName: 'GTBank',
+    accountNumber: '1234567890',
+    accountName: 'Sarah Johnson',
   },
-  { 
-    id: 'WR-2002', 
-    userId: '2', 
-    userName: 'Michael Chen', 
-    userEmail: 'michael.c@email.com', 
-    pointsWithdrawn: 1000, 
-    conversionRate: 2, 
+  {
+    id: 'WR-2002',
+    userId: '2',
+    userName: 'Michael Chen',
+    userEmail: 'michael.c@email.com',
+    pointsWithdrawn: 1000,
+    conversionRate: 2,
     currencySymbol: '$',
     currencyCode: 'AUD',
-    finalAmount: 500, 
-    status: 'pending', 
-    requestedDate: '2024-06-14' 
+    finalAmount: 500,
+    status: 'pending',
+    requestedDate: '2024-06-14',
+    bankName: 'ANZ',
+    accountNumber: '9876543210',
+    accountName: 'Michael Chen',
   },
-  { 
-    id: 'WR-2003', 
-    userId: '3', 
-    userName: 'Emma Williams', 
-    userEmail: 'emma.w@email.com', 
-    pointsWithdrawn: 750, 
-    conversionRate: 2, 
+  {
+    id: 'WR-2003',
+    userId: '3',
+    userName: 'Emma Williams',
+    userEmail: 'emma.w@email.com',
+    pointsWithdrawn: 750,
+    conversionRate: 2,
     currencySymbol: '$',
     currencyCode: 'AUD',
-    finalAmount: 375, 
-    status: 'approved', 
-    requestedDate: '2024-06-12', 
-    processedDate: '2024-06-13', 
-    processedBy: 'Finance Admin' 
+    finalAmount: 375,
+    status: 'approved',
+    requestedDate: '2024-06-12',
+    processedDate: '2024-06-13',
+    processedBy: 'Finance Admin',
+    bankName: 'Westpac',
+    accountNumber: '5551234567',
+    accountName: 'Emma Williams',
   },
-  { 
-    id: 'WR-2004', 
-    userId: '4', 
-    userName: 'James Park', 
-    userEmail: 'james.p@email.com', 
-    pointsWithdrawn: 250, 
-    conversionRate: 2, 
+  {
+    id: 'WR-2004',
+    userId: '4',
+    userName: 'James Park',
+    userEmail: 'james.p@email.com',
+    pointsWithdrawn: 250,
+    conversionRate: 2,
     currencySymbol: '$',
     currencyCode: 'AUD',
-    finalAmount: 125, 
-    status: 'processing', 
-    requestedDate: '2024-06-10', 
-    processedDate: '2024-06-11', 
-    processedBy: 'Finance Admin' 
+    finalAmount: 125,
+    status: 'processing',
+    requestedDate: '2024-06-10',
+    processedDate: '2024-06-11',
+    processedBy: 'Finance Admin',
+    bankName: 'Commonwealth Bank',
+    accountNumber: '1112223334',
+    accountName: 'James Park',
   },
-  { 
-    id: 'WR-2005', 
-    userId: '5', 
-    userName: 'Lisa Garcia', 
-    userEmail: 'lisa.g@email.com', 
-    pointsWithdrawn: 1500, 
-    conversionRate: 2, 
+  {
+    id: 'WR-2005',
+    userId: '5',
+    userName: 'Lisa Garcia',
+    userEmail: 'lisa.g@email.com',
+    pointsWithdrawn: 1500,
+    conversionRate: 2,
     currencySymbol: '$',
     currencyCode: 'AUD',
-    finalAmount: 750, 
-    status: 'paid', 
-    requestedDate: '2024-06-05', 
-    processedDate: '2024-06-08', 
-    processedBy: 'Finance Admin' 
+    finalAmount: 750,
+    status: 'paid',
+    requestedDate: '2024-06-05',
+    processedDate: '2024-06-08',
+    processedBy: 'Finance Admin',
+    bankName: 'NAB',
+    accountNumber: '4445556667',
+    accountName: 'Lisa Garcia',
   },
-  { 
-    id: 'WR-2006', 
-    userId: '6', 
-    userName: 'David Kim', 
-    userEmail: 'david.k@email.com', 
-    pointsWithdrawn: 250, 
+  {
+    id: 'WR-2006',
+    userId: '6',
+    userName: 'David Kim',
+    userEmail: 'david.k@email.com',
+    pointsWithdrawn: 250,
     conversionRate: 2.5, // Historical rate - different from current
     currencySymbol: '$',
     currencyCode: 'AUD',
-    finalAmount: 100, 
-    status: 'rejected', 
-    requestedDate: '2024-06-01', 
-    processedDate: '2024-06-02', 
-    processedBy: 'Finance Admin', 
-    note: 'Insufficient hours worked' 
+    finalAmount: 100,
+    status: 'rejected',
+    requestedDate: '2024-06-01',
+    processedDate: '2024-06-02',
+    processedBy: 'Finance Admin',
+    note: 'Insufficient hours worked',
+    bankName: 'GTBank',
+    accountNumber: '7778889990',
+    accountName: 'David Kim',
   },
 ];
 
@@ -151,6 +182,71 @@ export default function Withdrawals() {
   const [selectedWithdrawal, setSelectedWithdrawal] = useState<Withdrawal | null>(null);
   const [modalType, setModalType] = useState<'approve' | 'reject' | 'pay' | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const toggleSelection = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAllFiltered = () => {
+    const filtered = getFilteredWithdrawals();
+    const allSelected = filtered.every(w => selectedIds.has(w.id));
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filtered.map(w => w.id)));
+    }
+  };
+
+  const exportSelected = (format: 'csv' | 'pdf' | 'aba') => {
+    const items = mockWithdrawals.filter(w => selectedIds.has(w.id));
+    if (items.length === 0) {
+      alert('Select at least one withdrawal to export.');
+      return;
+    }
+
+    if (format === 'csv') {
+      const headers = 'Employee,Account Name,Account Number,Bank,Reference,Points,Amount,Status,Date\n';
+      const rows = items.map(w =>
+        `${w.userName},${w.accountName || ''},${w.accountNumber || ''},${w.bankName || ''},${w.id},${w.pointsWithdrawn},${w.finalAmount},${w.status},${w.requestedDate}`
+      ).join('\n');
+      const blob = new Blob([headers + rows], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `withdrawals-${new Date().toISOString().split('T')[0]}.csv`; a.click();
+      URL.revokeObjectURL(url);
+    } else if (format === 'pdf') {
+      const content = items.map(w =>
+        `${w.userName} | ${w.accountName || 'N/A'} | ${w.accountNumber || 'N/A'} | ${w.bankName || 'N/A'} | ${w.id} | ${w.currencySymbol}${w.finalAmount.toFixed(2)}`
+      ).join('\n');
+      const blob = new Blob([
+        `Bank Payments - Paramount Care Solutions Pty Ltd\nPeriod: ${new Date().toLocaleDateString()}\n\nEmployee | Account Name | Account Number | Bank | Reference | Amount\n${'='.repeat(80)}\n${content}\n${'='.repeat(80)}\nTotal: $${items.reduce((s, w) => s + w.finalAmount, 0).toFixed(2)}\n`
+      ], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `withdrawals-${new Date().toISOString().split('T')[0]}.txt`; a.click();
+      URL.revokeObjectURL(url);
+    } else if (format === 'aba') {
+      const lines = ['0                 01BQL       Paramount Care    001234Account 0106260623                      '];
+      items.forEach(w => {
+        const accNum = (w.accountNumber || '').padEnd(9, ' ');
+        const name = (w.accountName || w.userName).padEnd(32, ' ').slice(0, 32);
+        const amount = String(Math.round(w.finalAmount * 100)).padStart(10, '0');
+        lines.push(`1062-000${accNum} 500${amount}${name}PCS SALARY      001234${name}00000000`);
+      });
+      const totalAmount = String(Math.round(items.reduce((s, w) => s + w.finalAmount, 0) * 100)).padStart(10, '0');
+      lines.push(`7999-999            ${totalAmount}${totalAmount}                        ${String(items.length).padStart(6, '0')}                                        `);
+      const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `withdrawals-${new Date().toISOString().split('T')[0]}.aba`; a.click();
+      URL.revokeObjectURL(url);
+    }
+  };
 
   const canManage = user?.role === 'super_admin' || user?.role === 'finance_admin';
 
@@ -184,7 +280,28 @@ export default function Withdrawals() {
     return currentValue - lockedValue;
   };
 
+  const filteredData = getFilteredWithdrawals();
+  const allFilteredSelected = filteredData.length > 0 && filteredData.every(w => selectedIds.has(w.id));
+  const someFilteredSelected = filteredData.some(w => selectedIds.has(w.id));
+
   const columns = [
+    {
+      key: 'select',
+      header: '',
+      className: 'w-10',
+      render: (w: Withdrawal) => (
+        <button
+          onClick={(e) => { e.stopPropagation(); toggleSelection(w.id); }}
+          className="text-muted-foreground hover:text-foreground"
+        >
+          {selectedIds.has(w.id) ? (
+            <FaCheckSquare className="w-4 h-4 text-primary" />
+          ) : (
+            <FaRegSquare className="w-4 h-4" />
+          )}
+        </button>
+      ),
+    },
     {
       key: 'id',
       header: 'Request ID',
@@ -334,37 +451,37 @@ export default function Withdrawals() {
         subtitle="Process and track withdrawal requests"
       />
 
-      <div className="p-6 space-y-6">
+      <div className="p-4 md:p-6 space-y-4 md:space-y-6">
         {/* Summary Cards */}
-        <div className="grid grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
           <div className="kpi-card before:bg-warning">
-            <p className="text-sm text-muted-foreground">Pending Requests</p>
-            <p className="text-2xl font-semibold mt-1">{pendingCount}</p>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-xs md:text-sm text-muted-foreground">Pending Requests</p>
+            <p className="text-xl md:text-2xl font-semibold mt-1">{pendingCount}</p>
+            <p className="text-xs md:text-sm text-muted-foreground mt-1">
               {currentActiveRate.currencySymbol}{pendingAmount.toLocaleString()} {currentActiveRate.currencyCode}
             </p>
           </div>
           <div className="kpi-card before:bg-info">
-            <p className="text-sm text-muted-foreground">Processing</p>
-            <p className="text-2xl font-semibold mt-1">{processingCount}</p>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-xs md:text-sm text-muted-foreground">Processing</p>
+            <p className="text-xl md:text-2xl font-semibold mt-1">{processingCount}</p>
+            <p className="text-xs md:text-sm text-muted-foreground mt-1">
               {currentActiveRate.currencySymbol}{processingAmount.toLocaleString()} {currentActiveRate.currencyCode}
             </p>
           </div>
           <div className="kpi-card before:bg-success">
-            <p className="text-sm text-muted-foreground">Paid This Month</p>
-            <p className="text-2xl font-semibold mt-1">
+            <p className="text-xs md:text-sm text-muted-foreground">Paid This Month</p>
+            <p className="text-xl md:text-2xl font-semibold mt-1">
               {currentActiveRate.currencySymbol}{paidAmount.toLocaleString()}
             </p>
           </div>
           <div className="kpi-card before:bg-accent">
-            <p className="text-sm text-muted-foreground">Total Processed</p>
-            <p className="text-2xl font-semibold mt-1">{completedCount}</p>
+            <p className="text-xs md:text-sm text-muted-foreground">Total Processed</p>
+            <p className="text-xl md:text-2xl font-semibold mt-1">{completedCount}</p>
           </div>
-          <div className="kpi-card before:bg-primary">
-            <p className="text-sm text-muted-foreground">Current Rate</p>
-            <p className="text-2xl font-semibold mt-1">{currentActiveRate.pointsPerUnit} pts</p>
-            <p className="text-sm text-muted-foreground mt-1">
+          <div className="kpi-card before:bg-primary col-span-2 md:col-span-1">
+            <p className="text-xs md:text-sm text-muted-foreground">Current Rate</p>
+            <p className="text-xl md:text-2xl font-semibold mt-1">{currentActiveRate.pointsPerUnit} pts</p>
+            <p className="text-xs md:text-sm text-muted-foreground mt-1">
               = {currentActiveRate.currencySymbol}1.00 {currentActiveRate.currencyCode}
             </p>
           </div>
@@ -372,33 +489,65 @@ export default function Withdrawals() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <div className="flex items-center justify-between">
-            <TabsList>
-              <TabsTrigger value="pending">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <TabsList className="w-full md:w-auto">
+              <TabsTrigger value="pending" className="text-xs md:text-sm">
                 Pending ({pendingCount})
               </TabsTrigger>
-              <TabsTrigger value="processing">
+              <TabsTrigger value="processing" className="text-xs md:text-sm">
                 Processing ({processingCount})
               </TabsTrigger>
-              <TabsTrigger value="completed">
+              <TabsTrigger value="completed" className="text-xs md:text-sm">
                 Completed ({completedCount})
               </TabsTrigger>
-              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="all" className="text-xs md:text-sm">All</TabsTrigger>
             </TabsList>
 
             <div className="flex items-center gap-2">
-              <Button variant="outline">
-                <FileText className="w-4 h-4 mr-2" />
-                Export PDF
+              {/* Select all toggle */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={toggleAllFiltered}
+                className="text-xs md:text-sm"
+              >
+                {allFilteredSelected ? (
+                  <FaCheckSquare className="w-3.5 h-3.5 mr-1.5 text-primary" />
+                ) : someFilteredSelected ? (
+                  <FaMinusSquare className="w-3.5 h-3.5 mr-1.5 text-primary" />
+                ) : (
+                  <FaRegSquare className="w-3.5 h-3.5 mr-1.5" />
+                )}
+                {selectedIds.size > 0 ? `${selectedIds.size} selected` : 'Select all'}
               </Button>
-              <Button variant="outline">
-                <Download className="w-4 h-4 mr-2" />
-                Export CSV
-              </Button>
+
+              {/* Export dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="text-xs md:text-sm">
+                    <Download className="w-3.5 h-3.5 mr-1.5" />
+                    Export {selectedIds.size > 0 ? `(${selectedIds.size})` : ''}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => exportSelected('csv')}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Export as CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => exportSelected('pdf')}>
+                    <FileText className="w-4 h-4 mr-2" />
+                    Export as PDF
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => exportSelected('aba')}>
+                    <University className="w-4 h-4 mr-2" />
+                    Export as ABA
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
 
-          <TabsContent value={activeTab} className="mt-6">
+          <TabsContent value={activeTab} className="mt-4 md:mt-6">
             {/* Filters */}
             <FilterBar
               searchValue={search}
@@ -427,12 +576,12 @@ export default function Withdrawals() {
             {/* Table */}
             <DataTable
               columns={columns}
-              data={getFilteredWithdrawals()}
+              data={filteredData}
               keyExtractor={(w) => w.id}
               pagination={{
                 page,
                 pageSize,
-                total: getFilteredWithdrawals().length,
+                total: filteredData.length,
                 onPageChange: setPage,
                 onPageSizeChange: setPageSize,
               }}
@@ -491,6 +640,28 @@ export default function Withdrawals() {
                   </span>
                 </div>
               </div>
+
+              {/* Bank Account Details */}
+              {selectedWithdrawal.bankName && (
+                <div className="p-4 rounded-xl border border-border space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <University className="w-4 h-4" />
+                    <span>Bank Account Details</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Bank Name</span>
+                    <span className="font-medium">{selectedWithdrawal.bankName}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Account Number</span>
+                    <span className="font-mono font-medium">{selectedWithdrawal.accountNumber}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Account Name</span>
+                    <span className="font-medium">{selectedWithdrawal.accountName}</span>
+                  </div>
+                </div>
+              )}
 
               {/* Rate Information */}
               <div className="p-4 rounded-xl border border-border space-y-3">
